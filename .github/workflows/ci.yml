@@ -21,14 +21,26 @@ jobs:
           - ubuntu-latest
           - macos-latest
         ruby:
-          - "3.1"
-          - "3.2"
           - "3.3"
           - "3.4"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install native Rust dependencies
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev pkg-config
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install openblas pkg-config
+            echo "PKG_CONFIG_PATH=$(brew --prefix openblas)/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
+          else
+            echo "Unsupported runner OS: $RUNNER_OS"
+            exit 1
+          fi
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -49,6 +61,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install native Rust dependencies
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev pkg-config
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install openblas pkg-config
+            echo "PKG_CONFIG_PATH=$(brew --prefix openblas)/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
+          else
+            echo "Unsupported runner OS: $RUNNER_OS"
+            exit 1
+          fi
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

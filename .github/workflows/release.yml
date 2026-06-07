@@ -18,6 +18,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install native Rust dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev pkg-config
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
