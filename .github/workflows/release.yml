@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Build and verify release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Run specs
+        run: bundle exec rake spec
+
+      - name: Build gem
+        run: bundle exec rake build
+
+      - name: Upload gem artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruby_llm-turbovec-gem
+          path: pkg/*.gem
+          if-no-files-found: error
+
+  github-release:
+    name: Publish GitHub release asset
+    needs: verify
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Download gem artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ruby_llm-turbovec-gem
+          path: pkg
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pkg/*.gem
+

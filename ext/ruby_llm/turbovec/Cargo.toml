@@ -1,0 +1,18 @@
+[package]
+name = "ruby_llm_turbovec"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.81"
+authors = ["Sal Scotto <sal.scotto@gmail.com>"]
+license = "MIT"
+publish = false
+
+[lib]
+name = "ruby_llm_turbovec"
+crate-type = ["cdylib"]
+
+[dependencies]
+magnus = { version = "0.7", features = ["rb-sys"] }
+rb-sys = "0.9"
+turbovec = "0.8"
+

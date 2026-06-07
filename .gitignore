@@ -1,0 +1,16 @@
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+
+# native extension build outputs
+/ext/ruby_llm/turbovec/target/
+/ext/ruby_llm/turbovec/*.bundle
+/ext/ruby_llm/turbovec/*.dSYM/
+
+# rspec failure tracking
+.rspec_status

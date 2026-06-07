@@ -1,0 +1,53 @@
+module RubyLLM
+  module Turbovec
+    VERSION: ::String
+
+    class TurboQuantIndex
+      def self.new: (::Integer, ::Integer) -> TurboQuantIndex
+      def self.new_lazy: (::Integer) -> TurboQuantIndex
+      def self.load: (::String) -> TurboQuantIndex
+
+      def add: (::Array[::Float]) -> void
+      def add_with_dim: (::Array[::Float], ::Integer) -> void
+      def search: (::Array[::Float], ::Integer) -> SearchResults
+      def search_with_mask: (::Array[::Float], ::Integer, ::Array[bool]?) -> SearchResults
+      def prepare: () -> void
+      def write: (::String) -> void
+      def len: () -> ::Integer
+      def empty?: () -> bool
+      def dim: () -> ::Integer
+      def dim_opt: () -> ::Integer?
+      def bit_width: () -> ::Integer
+      def swap_remove: (::Integer) -> ::Integer
+    end
+
+    class SearchResults
+      def scores: () -> ::Array[::Float]
+      def indices: () -> ::Array[::Integer]
+      def nq: () -> ::Integer
+      def k: () -> ::Integer
+      def scores_for_query: (::Integer) -> ::Array[::Float]
+      def indices_for_query: (::Integer) -> ::Array[::Integer]
+    end
+
+    class IdMapIndex
+      def self.new: (::Integer, ::Integer) -> IdMapIndex
+      def self.new_lazy: (::Integer) -> IdMapIndex
+      def self.load: (::String) -> IdMapIndex
+
+      def add_with_ids: (::Array[::Float], ::Array[::Integer]) -> void
+      def add_with_ids_2d: (::Array[::Float], ::Integer, ::Array[::Integer]) -> void
+      def remove: (::Integer) -> bool
+      def search: (::Array[::Float], ::Integer) -> [::Array[::Float], ::Array[::Integer]]
+      def search_with_allowlist: (::Array[::Float], ::Integer, ::Array[::Integer]?) -> [::Array[::Float], ::Array[::Integer]]
+      def contains?: (::Integer) -> bool
+      def prepare: () -> void
+      def write: (::String) -> void
+      def len: () -> ::Integer
+      def empty?: () -> bool
+      def dim: () -> ::Integer
+      def dim_opt: () -> ::Integer?
+      def bit_width: () -> ::Integer
+    end
+  end
+end
