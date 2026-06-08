@@ -45,7 +45,10 @@ jobs:
             }
 
             const lockedVersion = match[1];
-            const response = await fetch('https://crates.io/api/v1/crates/turbovec');
+            const response = await fetch('https://crates.io/api/v1/crates/turbovec',{
+              headers: {
+                'User-Agent': 'washu/ruby_llm-turbovec version-check (sal.scotto@gmail.com)'}
+            });
 
             if (!response.ok) {
               throw new Error(`Failed to query crates.io: ${response.status} ${response.statusText}`);
