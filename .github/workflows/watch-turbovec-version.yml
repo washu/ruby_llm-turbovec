@@ -24,38 +24,81 @@ jobs:
           script: |
             const fs = require('fs');
 
+            const USER_AGENT = 'washu/ruby_llm-turbovec version-check (sal.scotto@gmail.com)';
+
             function parseVersion(version) {
-              return version.split('.').map((part) => parseInt(part, 10));
+              return version
+                .replace(/^v/, '')
+                .split('-')[0]
+                .split('.')
+                .map((part) => parseInt(part, 10) || 0);
             }
 
             function compareVersions(left, right) {
-              const [lMajor, lMinor, lPatch] = parseVersion(left);
-              const [rMajor, rMinor, rPatch] = parseVersion(right);
+              const l = parseVersion(left);
+              const r = parseVersion(right);
 
-              if (lMajor !== rMajor) return lMajor - rMajor;
-              if (lMinor !== rMinor) return lMinor - rMinor;
-              return lPatch - rPatch;
+              for (let i = 0; i < Math.max(l.length, r.length, 3); i++) {
+                const lv = l[i] || 0;
+                const rv = r[i] || 0;
+
+                if (lv !== rv) return lv - rv;
+              }
+
+              return 0;
             }
 
-            const cargoLock = fs.readFileSync('ext/ruby_llm/turbovec/Cargo.lock', 'utf8');
-            const match = cargoLock.match(/name = "turbovec"\nversion = "([^"]+)"/);
+            async function fetchText(url) {
+              const response = await fetch(url, {
+                headers: {
+                  'Accept': 'text/plain, application/json',
+                  'User-Agent': USER_AGENT,
+                },
+              });
+
+              if (!response.ok) {
+                const body = await response.text().catch(() => '');
+                throw new Error(
+                  `Failed to query crates.io index: ${response.status} ${response.statusText}\n` +
+                  `URL: ${url}\n` +
+                  `Body: ${body.slice(0, 1000)}`
+                );
+              }
+
+              return response.text();
+            }
+
+            const cargoLockPath = 'ext/ruby_llm/turbovec/Cargo.lock';
+            const cargoLock = fs.readFileSync(cargoLockPath, 'utf8');
+
+            const match = cargoLock.match(/name = "turbovec"\s+version = "([^"]+)"/);
 
             if (!match) {
-              throw new Error('Unable to find turbovec in ext/ruby_llm/turbovec/Cargo.lock');
+              throw new Error(`Unable to find turbovec in ${cargoLockPath}`);
             }
 
             const lockedVersion = match[1];
-            const response = await fetch('https://crates.io/api/v1/crates/turbovec',{
-              headers: {
-                'User-Agent': 'washu/ruby_llm-turbovec version-check (sal.scotto@gmail.com)'}
-            });
 
-            if (!response.ok) {
-              throw new Error(`Failed to query crates.io: ${response.status} ${response.statusText}`);
+            // crates.io sparse index path for "turbovec":
+            // crate names with 8+ chars use first 2 chars / next 2 chars / crate name
+            const indexUrl = 'https://index.crates.io/tu/rb/turbovec';
+            const indexBody = await fetchText(indexUrl);
+
+            const versions = indexBody
+              .trim()
+              .split('\n')
+              .filter(Boolean)
+              .map((line) => JSON.parse(line))
+              .filter((entry) => entry.name === 'turbovec')
+              .filter((entry) => !entry.yanked)
+              .map((entry) => entry.vers)
+              .sort(compareVersions);
+
+            if (versions.length === 0) {
+              throw new Error('No non-yanked turbovec versions found in crates.io index');
             }
 
-            const payload = await response.json();
-            const latestVersion = payload.crate.max_version;
+            const latestVersion = versions[versions.length - 1];
 
             if (compareVersions(latestVersion, lockedVersion) <= 0) {
               core.info(`turbovec is current: locked=${lockedVersion}, latest=${latestVersion}`);
@@ -63,6 +106,7 @@ jobs:
             }
 
             const title = `turbovec ${latestVersion} is available`;
+
             const existing = await github.paginate(github.rest.issues.listForRepo, {
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -80,7 +124,7 @@ jobs:
               '',
               `- Locked version: \`${lockedVersion}\``,
               `- Latest version: \`${latestVersion}\``,
-              `- Dependency range: \`turbovec = \"0.8\"\``,
+              `- Dependency range: \`turbovec = "0.8"\``,
               '',
               'Please update the Rust dependency, rebuild the native extension, and run the test suite to keep the Ruby gem in sync.',
             ].join('\n');
@@ -93,4 +137,3 @@ jobs:
             });
 
             core.notice(`Created issue: ${title}`);
-
