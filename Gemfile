@@ -12,4 +12,3 @@ gem "rspec", "~> 3.0"
 gem "simplecov", "~> 0.22"
 
 gem "rubocop", "~> 1.21"
-
